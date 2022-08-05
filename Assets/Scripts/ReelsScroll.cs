@@ -10,39 +10,51 @@ public class ReelsScroll : MonoBehaviour
     [SerializeField] private float delayStep;
     [SerializeField] private Ease startEase;
     [SerializeField] private Button playButton;
-    [SerializeField] private int countRotation, timeRotation;
+    [SerializeField] private int countRotation;
+    [SerializeField] private float timeRotation;
+    [SerializeField] private float symbolSize;
+    [SerializeField] private int symbolCount;
+    private Dictionary<int, SymbolsMove> symbolsOnReel = new Dictionary<int, SymbolsMove>();
+
+    private void Start()
+    {
+        SymbolsMove reel = reels[0].GetComponent<SymbolsMove>();
+
+        symbolSize = reel.GetSymbolSize();
+        symbolCount = reel.GetCountSymbols();
+
+        for (int i = 0; i < reels.Length; i++)
+        {
+            symbolsOnReel.Add(i, reels[i].GetComponent<SymbolsMove>());
+        }
+        
+    }
     public void DoMoveReel()
     {
         playButton.interactable = false;
+
         for (int i = 0; i < reels.Length; i++)
         {
-            reels[i].DOAnchorPosY(countRotation * -800, timeRotation)
+            reels[i].DOAnchorPosY(-1 * countRotation * symbolSize * symbolCount, timeRotation)
                 .SetDelay(i * delayStep)
                 .SetEase(startEase)
                 .OnComplete(() =>
                 {
-                    ResetGame();
+                    ResetGame(-1 * countRotation * symbolSize * symbolCount);
                 });
-
         }
     }
 
-    public void ResetLocalPosition(RectTransform reel)
+    void ResetGame(float stopPosition)
     {
-        SymbolsMove symbolsOnReel = reel.GetComponent<SymbolsMove>();
-        symbolsOnReel.ResetLocalPosition(countRotation * -800);
-        reel.localPosition = new Vector3(0, 0);
-    }
-    void ResetGame()
-    {
-        if (reels[2].localPosition.y <= countRotation * -800 + 1)
+        if (reels[reels.Length - 1].localPosition.y <= stopPosition + 1)
         {
-            playButton.interactable = true;
-
-            foreach (RectTransform reel in reels)
+            for (int i = 0; i < reels.Length; i++)
             {
-                ResetLocalPosition(reel);
+                symbolsOnReel[i].ResetLocalPosition(stopPosition);
+                reels[i].localPosition = new Vector3(0, 0);
             }
+            playButton.interactable = true;
         }
 
     }
